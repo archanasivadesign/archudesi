@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #50e3c2;
+            --dark-color: #2c3e50;
+            --light-color: #f5f7fa;
+            --danger-color: #ff6384;
+            --warning-color: #ffcd56;
+            --success-color: #4bc0c0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-color: var(--dark-color);
+            color: white;
+            transition: all 0.3s;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar-header h3 {
+            margin-left: 10px;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .sidebar-menu li {
+            list-style: none;
+            position: relative;
+        }
+
+        .sidebar-menu li a {
+            display: block;
+            padding: 15px 20px;
+            color: #fff;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar-menu li a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-menu li a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--secondary-color);
+        }
+
+        .sidebar-menu li.active a {
+            background-color: rgba(74, 144, 226, 0.2);
+            color: var(--primary-color);
+            border-left: 3px solid var(--primary-color);
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            transition: all 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left h1 {
+            font-size: 1.5rem;
+            color: var(--dark-color);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .notification-icon, .user-profile {
+            position: relative;
+            margin-left: 20px;
+            cursor: pointer;
+        }
+
+        .notification-icon i {
+            font-size: 1.2rem;
+            color: var(--dark-color);
+        }
+
+        .notification-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .user-profile img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* Content Area Styles */
+        .content {
+            padding: 20px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            color: #666;
+        }
+
+        .card-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+
+        .card-change {
+            font-size: 0.9rem;
+        }
+
+        .positive {
+            color: var(--success-color);
+        }
+
+        .negative {
+            color: var(--danger-color);
+        }
+
+        .chart-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-title {
+            margin-bottom: 20px;
+            color: var(--dark-color);
+            font-size: 1.2rem;
+        }
+
+        /* Settings, Notifications, Help Sections */
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section-title {
+            margin-bottom: 20px;
+            color: var(--dark-color);
+            font-size: 1.3rem;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Settings Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #3a7bc8;
+        }
+
+        /* Notifications List */
+        .notification-list {
+            list-style: none;
+        }
+
+        .notification-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-icon {
+            margin-right: 15px;
+            font-size: 1.2rem;
+        }
+
+        .notification-info {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .notification-time {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        .unread {
+            background-color: rgba(74, 144, 226, 0.05);
+        }
+
+        /* Help Section */
+        .faq-item {
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 15px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+        }
+
+        .faq-answer {
+            padding: 15px;
+            display: none;
+            background-color: white;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        /* Mobile Menu Toggle */
+        .menu-toggle {
+            display: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--dark-color);
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 70px;
+                overflow: hidden;
+            }
+
+            .sidebar-header h3, .sidebar-menu li a span {
+                display: none;
+            }
+
+            .sidebar-menu li a {
+                justify-content: center;
+            }
+
+            .sidebar-menu li a i {
+                margin-right: 0;
+                font-size: 1.2rem;
+            }
+
+            .main-content {
+                margin-left: 70px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -250px;
+                z-index: 1000;
+                width: 250px;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .chart-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-right {
+                margin-top: 10px;
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-chart-line"></i>
+                <h3>Dashboard</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="active" data-section="dashboard">
+                    <a href="#">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li data-section="settings">
+                    <a href="#">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                <li data-section="notifications">
+                    <a href="#">
+                        <i class="fas fa-bell"></i>
+                        <span>Notifications</span>
+                        <span class="notification-count">3</span>
+                    </a>
+                </li>
+                <li data-section="help">
+                    <a href="#">
+                        <i class="fas fa-question-circle"></i>
+                        <span>Help</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <div class="header-left">
+                    <div class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </div>
+                    <h1 id="pageTitle">Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <div class="notification-icon" id="notificationIcon">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-count">3</span>
+                    </div>
+                    <div class="user-profile">
+                        <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="User">
+                    </div>
+                </div>
+            </div>
+
+            <div class="content">
+                <!-- Dashboard Section -->
+                <div class="section active" id="dashboard-section">
+                    <div class="cards">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Total Sales</div>
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="card-value">$24,780</div>
+                            <div class="card-change positive">
+                                <i class="fas fa-arrow-up"></i> 12.5% from last month
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">New Users</div>
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="card-value">1,254</div>
+                            <div class="card-change positive">
+                                <i class="fas fa-arrow-up"></i> 8.3% from last month
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Conversion Rate</div>
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                            <div class="card-value">3.6%</div>
+                            <div class="card-change negative">
+                                <i class="fas fa-arrow-down"></i> 0.8% from last month
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Avg. Session</div>
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="card-value">4m 32s</div>
+                            <div class="card-change positive">
+                                <i class="fas fa-arrow-up"></i> 12.5% from last month
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-card">
+                            <h3 class="chart-title">Sales Over Time</h3>
+                            <canvas id="lineChart"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3 class="chart-title">Browser Usage</h3>
+                            <canvas id="barChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="section" id="settings-section">
+                    <h2 class="section-title">Settings</h2>
+                    <form id="settingsForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">First Name</label>
+                                <input type="text" id="firstName" class="form-control" value="John">
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name</label>
+                                <input type="text" id="lastName" class="form-control" value="Doe">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" class="form-control" value="john.doe@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="timezone">Timezone</label>
+                            <select id="timezone" class="form-control">
+                                <option value="GMT-12">(GMT-12:00) International Date Line West</option>
+                                <option value="GMT-8" selected>(GMT-08:00) Pacific Time (US & Canada)</option>
+                                <option value="GMT-5">(GMT-05:00) Eastern Time (US & Canada)</option>
+                                <option value="GMT">(GMT) Greenwich Mean Time: Dublin, Edinburgh, Lisbon, London</option>
+                                <option value="GMT+1">(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna</option>
+                                <option value="GMT+8">(GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="emailNotifications" checked> Receive email notifications
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="darkMode"> Enable dark mode
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+
+                <!-- Notifications Section -->
+                <div class="section" id="notifications-section">
+                    <h2 class="section-title">Notifications</h2>
+                    <ul class="notification-list">
+                        <li class="notification-item unread">
+                            <div class="notification-icon">
+                                <i class="fas fa-exclamation-circle text-danger"></i>
+                            </div>
+                            <div class="notification-info">
+                                <div class="notification-title">System Update Required</div>
+                                <div class="notification-desc">A critical system update is available for your dashboard.</div>
+                                <div class="notification-time">10 minutes ago</div>
+                            </div>
+                        </li>
+                        <li class="notification-item unread">
+                            <div class="notification-icon">
+                                <i class="fas fa-chart-line text-primary"></i>
+                            </div>
+                            <div class="notification-info">
+                                <div class="notification-title">New Analytics Data</div>
+                                <div class="notification-desc">Your weekly analytics report is ready to view.</div>
+                                <div class="notification-time">2 hours ago</div>
+                            </div>
+                        </li>
+                        <li class="notification-item unread">
+                            <div class="notification-icon">
+                                <i class="fas fa-user-plus text-success"></i>
+                            </div>
+                            <div class="notification-info">
+                                <div class="notification-title">New User Registered</div>
+                                <div class="notification-desc">Jane Smith has registered for an account.</div>
+                                <div class="notification-time">5 hours ago</div>
+                            </div>
+                        </li>
+                        <li class="notification-item">
+                            <div class="notification-icon">
+                                <i class="fas fa-shopping-cart text-warning"></i>
+                            </div>
+                            <div class="notification-info">
+                                <div class="notification-title">New Order Received</div>
+                                <div class="notification-desc">Order #12345 has been placed.</div>
+                                <div class="notification-time">Yesterday</div>
+                            </div>
+                        </li>
+                        <li class="notification-item">
+                            <div class="notification-icon">
+                                <i class="fas fa-bell text-info"></i>
+                            </div>
+                            <div class="notification-info">
+                                <div class="notification-title">Weekly Summary</div>
+                                <div class="notification-desc">Your weekly performance summary is available.</div>
+                                <div class="notification-time">3 days ago</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Help Section -->
+                <div class="section" id="help-section">
+                    <h2 class="section-title">Help Center</h2>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>How do I change my account settings?</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>To change your account settings, navigate to the Settings section from the sidebar menu. From there, you can update your personal information, preferences, and notification settings. Don't forget to click "Save Changes" when you're done.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>How can I view my sales data?</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Your sales data is available on the Dashboard. The line chart shows your sales over time, and the summary cards provide key metrics. For more detailed reports, click on the "Reports" option in the sidebar (coming soon).</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>What do the different notification icons mean?</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Notification icons indicate the type of alert:
+                                <ul>
+                                    <li><i class="fas fa-exclamation-circle text-danger"></i> Urgent or critical alerts</li>
+                                    <li><i class="fas fa-chart-line text-primary"></i> Analytics and reports</li>
+                                    <li><i class="fas fa-user-plus text-success"></i> User activity</li>
+                                    <li><i class="fas fa-shopping-cart text-warning"></i> Order updates</li>
+                                    <li><i class="fas fa-bell text-info"></i> General notifications</li>
+                                </ul>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>How do I reset my password?</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>To reset your password, log out of your account and click on the "Forgot Password" link on the login page. You'll receive an email with instructions to reset your password. If you're already logged in, you can change your password in the Security section of your Settings.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Line Chart
+            const lineCtx = document.getElementById('lineChart').getContext('2d');
+            const lineChart = new Chart(lineCtx, {
+                type: 'line', // Specify chart type
+                data: {
+                    labels: ['January', 'February', 'March', 'April', 'May', 'June'], // X-axis labels
+                    datasets: [{
+                        label: 'Sales Over Time', // Dataset label
+                        data: [120, 190, 300, 500, 200, 300], // Data points
+                        backgroundColor: 'rgba(74, 144, 226, 0.2)', // Fill color below the line
+                        borderColor: 'rgba(74, 144, 226, 1)', // Line color
+                        borderWidth: 2, // Line width
+                        tension: 0.4 // Curvature of the line
+                    }]
+                },
+                options: {
+                    responsive: true, // Chart responsiveness
+                    animation: {
+                        duration: 1000, // Animation duration in ms
+                        easing: 'easeInOutQuart' // Animation easing function
+                    },
+                    plugins: {
+                        legend: {
+                            display: true, // Display the legend
+                            position: 'top' // Position of the legend
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false // Hide vertical grid lines
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: '#eaeaea' // Grid line color
+                            },
+                            beginAtZero: true // Y-axis starts at zero
+                        }
+                    }
+                }
+            });
+
+            // Initialize Bar Chart
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            const barChart = new Chart(barCtx, {
+                type: 'bar', // Specify chart type
+                data: {
+                    labels: ['Chrome', 'Firefox', 'Safari', 'Edge', 'Opera'], // X-axis labels
+                    datasets: [{
+                        label: 'Browser Usage', // Dataset label
+                        data: [65, 59, 80, 81, 56], // Data points
+                        backgroundColor: [ // Bar colors
+                            'rgba(74, 144, 226, 0.8)',
+                            'rgba(80, 227, 194, 0.8)',
+                            'rgba(255, 205, 86, 0.8)',
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(153, 102, 255, 0.8)'
+                        ],
+                        borderColor: [ // Border colors for bars
+                            'rgba(74, 144, 226, 1)',
+                            'rgba(80, 227, 194, 1)',
+                            'rgba(255, 205, 86, 1)',
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(153, 102, 255, 1)'
+                        ],
+                        borderWidth: 1 // Border width
+                    }]
+                },
+                options: {
+                    responsive: true, // Chart responsiveness
+                    animation: {
+                        duration: 1000, // Animation duration in ms
+                        easing: 'easeInOutQuart' // Animation easing function
+                    },
+                    plugins: {
+                        legend: {
+                            display: false // Hide the legend
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false // Hide vertical grid lines
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: '#eaeaea' // Grid line color
+                            },
+                            beginAtZero: true // Y-axis starts at zero
+                        }
+                    }
+                }
+            });
+
+            // Menu Toggle for Mobile
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+
+            // Navigation between sections
+            const menuItems = document.querySelectorAll('.sidebar-menu li');
+            const sections = document.querySelectorAll('.section');
+            const pageTitle = document.getElementById('pageTitle');
+
+            menuItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // Remove active class from all menu items and sections
+                    menuItems.forEach(i => i.classList.remove('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+                    
+                    // Add active class to clicked menu item
+                    item.classList.add('active');
+                    
+                    // Show corresponding section
+                    const sectionId = item.getAttribute('data-section');
+                    document.getElementById(`${sectionId}-section`).classList.add('active');
+                    
+                    // Update page title
+                    const sectionName = item.querySelector('span').textContent;
+                    pageTitle.textContent = sectionName;
+                    
+                    // Close sidebar on mobile after selection
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.remove('active');
+                    }
+                });
+            });
+
+            // Notification icon click
+            const notificationIcon = document.getElementById('notificationIcon');
+            notificationIcon.addEventListener('click', () => {
+                // Navigate to notifications section
+                menuItems.forEach(i => i.classList.remove('active'));
+                sections.forEach(s => s.classList.remove('active'));
+                
+                document.querySelector('.sidebar-menu li[data-section="notifications"]').classList.add('active');
+                document.getElementById('notifications-section').classList.add('active');
+                pageTitle.textContent = 'Notifications';
+                
+                // Close sidebar on mobile after selection
+                if (window.innerWidth < 768) {
+                    sidebar.classList.remove('active');
+                }
+                
+                // Reset notification count
+                const notificationCounts = document.querySelectorAll('.notification-count');
+                notificationCounts.forEach(count => {
+                    count.textContent = '0';
+                    count.style.display = 'none';
+                });
+            });
+
+            // FAQ accordion
+            const faqQuestions = document.querySelectorAll('.faq-question');
+            faqQuestions.forEach(question => {
+                question.addEventListener('click', () => {
+                    const faqItem = question.parentElement;
+                    faqItem.classList.toggle('active');
+                    
+                    // Close other FAQ items when opening one
+                    if (faqItem.classList.contains('active')) {
+                        faqQuestions.forEach(q => {
+                            if (q.parentElement !== faqItem) {
+                                q.parentElement.classList.remove('active');
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Settings form submission
+            const settingsForm = document.getElementById('settingsForm');
+            settingsForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                alert('Settings saved successfully!');
+            });
+
+            // Dark mode toggle
+            const darkModeToggle = document.getElementById('darkMode');
+            darkModeToggle.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    document.body.classList.add('dark-mode');
+                } else {
+                    document.body.classList.remove('dark-mode');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
